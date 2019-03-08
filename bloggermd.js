@@ -33,7 +33,7 @@ class Markdown {
             if (block) return;
 
             // also ignore references in headings
-            const h = find_first_char_not('#', l);
+            const h = this.find_first_char_not('#', l);
             if (h > 0 && l.charAt(h) === ' ') return;
 
             // not in block, so check for match
@@ -197,7 +197,7 @@ class Markdown {
             }
 
             // HEADINGS
-            const x = find_first_char_not('#', l);
+            const x = this.find_first_char_not('#', l);
             if (block === '' && x > 0 && l.charAt(x) === ' ') {
                 // assign appropriate heading level and truncated heading text
                 l = `<h${x}>${l.substr(x)}</h${x}>`;
