@@ -1,140 +1,4 @@
 /*
-    HH   HH EEEEEEE LL      PPPPPP  EEEEEEE RRRRRR   SSSSS
-    HH   HH EE      LL      PP   PP EE      RR   RR SS
-    HHHHHHH EEEEE   LL      PPPPPP  EEEEE   RRRRRR   SSSSS
-    HH   HH EE      LL      PP      EE      RR  RR       SS
-    HH   HH EEEEEEE LLLLLLL PP      EEEEEEE RR   RR  SSSSS
-*/
-
-/**
-    Utility class for static helper functions used across other classes
-*/
-class Helpers {
-
-    constructor() {
-    }
-
-    // simple function to get variable assignment values (ie. x="hello")
-    static getVariableAssignment(v) {
-        let result = '';
-        const assignment = v.split('=');
-        if (assignment.length > 1) result = assignment[1].substring(1);
-        return result.substring(0, result.length - 1);
-    }
-
-    // helper function to determine if a line is a heading
-    static isHeading(line, nextLine, inBlock) {
-        const x = Helpers.find_first_char_not('#', line);
-        if (inBlock) return false;
-        if (nextLine.startsWith('---')) {
-            if (!line.startsWith('```') && line.length > 1) {
-                return true;
-            }
-        }
-        if (nextLine.startsWith('===')) {
-            if (!line.startsWith('```') && line.length > 1) {
-                return true;
-            }
-        }
-        if (x < 1) return false;
-        if (x > 7) return false;
-        if (line.charAt(x) !== ' ') return false;
-        return true;
-    }
-
-    // returns version of l only with contents between open and close strings
-    static between(open, l, close) {
-        return l.substring(l.indexOf(open) + 1, l.indexOf(close));
-    }
-
-    // used to merge example arrays or arrays of markdown links based on link titles
-    static mergeExamples(a1, a2) {
-        let result = a2;
-        a1.forEach(a1i => {
-            let found = a2.find(a2i => {
-                let name1 = Helpers.between('[', a1i, ']');
-                let name2 = Helpers.between('[', a2i, ']');
-                return name1.toLowerCase() === name2.toLowerCase();
-            });
-            if (found) return;
-            result.push(a1i);
-        });
-        return result;
-    }
-
-    // sanitize provided @str
-    // this function will be the sole way to clean content throughout core
-    // so by using a single method, we'll be able to change the means of sanitizing later
-    static clean(str) {
-        const parser = new HtmlWhitelistedSanitizer(true);
-        return parser.sanitizeString(str);
-    }
-
-    // generates CSS id from string, for use with heading
-    static cssId(str) {
-        str = Helpers.replaceCodes(str);
-        // remove non-alphanumerics
-        str = str.replace(/[^a-zA-Z0-9_\s-]/g, '-');
-        // clean up multiple dashes or spaces
-        str = str.replace(/[\s-]+/g, ' ');
-        // remove leading and trailing spaces
-        str = str.trim();
-        // convert spaces and underscores to dash
-        str = str.replace(/[\s_]/g, '-');
-        return str.toLowerCase();
-    }
-
-    // strip a string of code blocks like `��-Intro`
-    static replaceCodes(str) {
-        str = str.replace('��', 'i-');
-        // replace enclosed code blocks `code`
-        return str.replace(/`(.*?)`/g, '');
-    }
-
-    static extractSuffix(s) {
-        if (s === null) return '';
-        // if it's not a string, it has no suffix so just return
-        if (typeof s !== 'string') return '';
-        // we'll set a feasible limit here,
-        // numbers larger than 8 digits should be very rare
-        if (s.length > 8) return '';
-        if (s.match(/[+-]?\d+(?:\.\d+)?/)) {
-            return s.replace(/[+-]?\d+(?:\.\d+)?/g, '');
-        }
-        return '';
-    }
-
-    // returns real name of string, assuming it's a section heading
-    static realName(str) {
-        // remove leading and trailing spaces
-        str = str.trim();
-        let i = Helpers.find_first_char_not('#', str);
-        str = Helpers.replaceCodes(str);
-        str = str.substr(i).trim();
-        return str;
-    }
-
-    // find first character in str that is not char and return its location
-    static find_first_char_not(char, str) {
-        for (var i = 0; i < str.length; i++) {
-            if (str[i] != char) return i;
-        }
-        return -1;
-    };
-
-    // accepts section array @s which includes heading and content [h,c]
-    // returns heading level (h1, h2, h3) based on leading HR or ### counter
-    static getHlevel(s) {
-        let c = s[1];
-        if (c === undefined) return 0;
-        if (c.startsWith('---')) return 2;
-        else if (c.startsWith('===')) return 1;
-        else return Helpers.find_first_char_not('#', s[0]);
-    }
-
-}
-
-/*
     MM    MM   AAA   RRRRRR  KK  KK DDDDD    OOOOO  WW      WW NN   NN
     MMM  MMM  AAAAA  RR   RR KK KK  DD  DD  OO   OO WW      WW NNN  NN
     MM MM MM AA   AA RRRRRR  KKKK   DD   DD OO   OO WW   W  WW NN N NN
@@ -151,6 +15,14 @@ class Markdown {
         this.references = [];
     }
 
+    // find first character in str that is not char and return its location
+    find_first_char_not(char, str) {
+        for (var i = 0; i < str.length; i++) {
+            if (str[i] != char) return i;
+        }
+        return -1;
+    };
+
     extractReferences(c) {
         this.references = [];
         let block = false;
@@ -161,7 +33,7 @@ class Markdown {
             if (block) return;
 
             // also ignore references in headings
-            const h = Helpers.find_first_char_not('#', l);
+            const h = find_first_char_not('#', l);
             if (h > 0 && l.charAt(h) === ' ') return;
 
             // not in block, so check for match
@@ -325,7 +197,7 @@ class Markdown {
             }
 
             // HEADINGS
-            const x = Helpers.find_first_char_not('#', l);
+            const x = find_first_char_not('#', l);
             if (block === '' && x > 0 && l.charAt(x) === ' ') {
                 // assign appropriate heading level and truncated heading text
                 l = `<h${x}>${l.substr(x)}</h${x}>`;
@@ -478,6 +350,12 @@ class Markdown {
 }
 
 let el = document.querySelector(".post-body.entry-content");
+// we'll first remove br tags
+let br = el.getElementsByTagName('br');
+while (br.length) {
+  br[0].parentNode.removeChild(br[0]);
+}
+// now make the conversion and render it
 let md = new Markdown();
 let c = el.innerHTML;
 el.innerHTML = md.render(c);
